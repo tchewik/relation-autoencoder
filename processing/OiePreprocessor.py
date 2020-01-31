@@ -4,10 +4,13 @@ import argparse
 import os
 import sys
 import time
+sys.path.append(".")
+sys.path.append("..")
 from definitions import OieFeatures
 from definitions import OieExample
-print sys.path
-import cPickle as pickle
+print(sys.path)
+import _pickle as pickle
+import pandas as pd
 
 
 class FeatureLexicon:
@@ -66,6 +69,9 @@ class FeatureLexicon:
         return self.nextIdPruned
         # return self.nextId
 
+    def __str__(self):
+        return str({'count': self.nextId, 'id2Str': self.id2Str,
+        'countPruned': self.nextIdPruned, 'id2StrPruned': self.id2StrPruned})
 
 def getFeatures(lexicon, featureExs, info, arg1=None, arg2=None, expand=False):
     feats = []
@@ -145,6 +151,7 @@ def prepareArgParser():
     return parser
 
 def loadExamples(fileName):
+    """
     count = 0
     with open(fileName, 'r') as fp:
         relationExamples = []
@@ -160,46 +167,33 @@ def loadExamples(fileName):
                 # this will be 10
                 relationExamples.append([str(count)] + fields)
                 count += 1
+    """
+    relationExamples = pd.read_csv(fileName, sep='\t', header=None).fillna('').values
 
     return relationExamples
 
-# if __name__ == '__main__':
-#     examples = loadExamples('/Users/admin/isti/amsterdam/data/candidate-100.txt')
-#     print "Using basic features"
-#     argFeatureExtrs = OieFeatures.getBasicFeatures()
-#     ex = examples[0]
-#     print ex
-#     features = argFeatureExtrs
-#
-#     s = []
-#     for f in features:
-#         res = f([ex[1], ex[4], ex[5], ex[7]], ex[2], ex[3])
-#         if res is not None:
-#             s.append(f.__name__ + "#" + res)
-#
-#     print s, 'dd'
 
 if __name__ == '__main__':
 
     tStart = time.time()
 
-    print "Parameters: " + str(sys.argv[1::])
+    print("Parameters: " + str(sys.argv[1::]))
     parser = prepareArgParser()
     args = parser.parse_args()
 
-    print "Parsed params: " + str(args)
+    print("Parsed params: " + str(args))
 
-    print "Loading sentences...",
+    print("Loading sentences...", end='')
     relationExamples = loadExamples(args.input_file)
 
     tEnd = time.time()
-    print "Done (" + str(tEnd - tStart) + "s.)"
+    print("Done (" + str(tEnd - tStart) + "s.)")
 
     # predFeatureExtrs = definitions.SrlFeatures.getJohanssonPredDisFeatures()
     #
     featureExtrs = None
     if args.features == "basic":
-        print "Using rich features"
+        print("Using rich features")
         featureExtrs = OieFeatures.getBasicCleanFeatures()
 
     relationLexicon = FeatureLexicon()
@@ -209,7 +203,7 @@ if __name__ == '__main__':
 
     if os.path.exists(args.pickled_dataset):
         tStart = time.time()
-        print "Found existing pickled dataset, loading...",
+        print("Found existing pickled dataset, loading...", end='')
 
         pklFile = open(args.pickled_dataset, 'rb')
 
@@ -220,10 +214,10 @@ if __name__ == '__main__':
 
         pklFile.close()
         tEnd = time.time()
-        print "Done (" + str(tEnd - tStart) + "s.)"
+        print("Done (" + str(tEnd - tStart) + "s.)")
 
     tStart = time.time()
-    print "Processing relation Examples",
+    print("Processing relation Examples", end='')
 
     examples = []
     relationLabels = {}
@@ -237,19 +231,19 @@ if __name__ == '__main__':
     reIdx = 0
     c = 0
     for re in relationExamples:
-        getFeatures(relationLexicon, featureExtrs, [re[1], re[4], re[5], re[7], re[8], re[6]],
-                                                             re[2], re[3], True)
+        getFeatures(relationLexicon, featureExtrs, re, re[1], re[3], True)
     for re in relationExamples:
         reIdx += 1
         if reIdx % 1000 == 0:
-            print ".",
+            print(".", end='')
         if reIdx % 10000 == 0:
-            print reIdx,
+            print(reIdx, end='')
 
 
         relationE = ''
-        if re[9] != '':
-            relationE = re[9]
+        if re[8] != '':
+            relationE = re[8]
+
         # print re[9]
         # if re[10] != '':
         #     if relationE != '':
@@ -259,22 +253,24 @@ if __name__ == '__main__':
 
         ex = OieExample.OieExample(re[2], re[3], getFeaturesThreshold(relationLexicon,
                                                              featureExtrs,
-                                                             [re[1], re[4], re[5], re[7], re[8], re[6]],
+                                                             re,
+                                                             ##[re[1], re[4], re[5], re[7], re[8], re[6]],
                                                              # [re[1], re[4], re[5], re[7]],
-                                                             re[2], re[3], True, threshold=args.threshold), re[5]
-                                                             ,relation=relationE
+                                                             ##re[2], re[3], 
+                                                             re[1], re[3],
+                                                             True, threshold=args.threshold), re[8],
+                                                             relation=relationE
                                    )
         relationLabels[c] = re[-1].strip().split(' ')
         c += 1
 
         examples.append(ex)
 
-
     tEnd = time.time()
-    print "Done (" + str(tEnd - tStart) + "s.), processed " + str(len(examples))
+    print("Done (" + str(tEnd - tStart) + "s.), processed " + str(len(examples)))
 
     tStart = time.time()
-    print "Pickling the dataset...",
+    print("Pickling the dataset...", end='')
 
     pklFile = open(args.pickled_dataset, 'wb')
     #pklFile = gzip.GzipFile(args.pickled_dataset, 'wb')
@@ -286,4 +282,4 @@ if __name__ == '__main__':
     pickle.dump(goldstandard, pklFile, protocol=pklProtocol)
 
     tEnd = time.time()
-    print "Done (" + str(tEnd - tStart) + "s.)"
+    print("Done (" + str(tEnd - tStart) + "s.)")
