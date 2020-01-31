@@ -5,7 +5,7 @@ import theano
 from definitions import settings
 import numpy as np
 import theano.tensor as T
-import cPickle as pickle
+import _pickle as pickle
 
 class SelectionalPreferences(object):
 
@@ -33,7 +33,7 @@ class SelectionalPreferences(object):
             import gensim
             external_embeddings = gensim.models.Word2Vec.load(settings.external_embeddings_path)
 
-            for idArg in xrange(self.a):
+            for idArg in range(self.a):
                 arg = data.id2Arg[idArg].lower().split(' ')
                 new = np.zeros(k, dtype=theano.config.floatX)
                 size = 0

@@ -21,7 +21,7 @@ class IndependentRelationClassifiers(object):
         # w_bound = np.sqrt(self.h * self.r)
 
         # print str(1.0 / w_bound)
-        print 'low bound =', settings.low, 'high bound =', settings.high
+        print('low bound =', settings.low, 'high bound =', settings.high)
         self.W = theano.shared(np.asarray(rng.uniform(
             low=settings.low,
             high=settings.high,
@@ -59,7 +59,6 @@ class IndependentRelationClassifiers(object):
 
         return relationProbs  # [l, r]
 
-
     def labelFunct(self, batchSize, xFeats):
         #  xFeats [l, h]
         # l = batchSize
@@ -71,3 +70,4 @@ class IndependentRelationClassifiers(object):
         labels = T.argmax(scores, axis=1)  #  [l, r] => [l]
         # labels = theano.printing.Print("labels ") (labels)
         return (labels, relationProbs)
+    

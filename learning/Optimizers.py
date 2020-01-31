@@ -14,7 +14,7 @@ class AdaGrad(object):
             self.accumulator.append(theano.shared(eps_p, borrow=True))
 
     def update(self, learningRate, params, cost):
-        print 'AdaGrad takes the floor'
+        print('AdaGrad takes the floor')
         grads = T.grad(cost, params)
         updates = []
         for param_i, grad_i, acc_i in zip(params, grads, self.accumulator):
@@ -26,7 +26,7 @@ class AdaGrad(object):
 
 class SGD(object):
     def update(self, learningRate, params, cost):
-        print 'SGD takes the floor'
+        print('SGD takes the floor')
         grads = T.grad(cost, params)
         updates = []
         for param_i, grad_i in zip(params, grads):

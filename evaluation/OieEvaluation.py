@@ -218,7 +218,7 @@ class singleLabelClusterEvaluation:
             F1B3 = (2 * recB3 * precB3) / (recB3 + precB3)
             F05B3 = ((1+betasquare) * recB3 * precB3)/((betasquare*precB3)+recB3)
 
-        print validOrTrain, ' Elementwise B3 F1 =', F1B3, 'F0.5 =', F05B3, 'B3 recall =', recB3, 'B3 precision =', precB3
+        print(validOrTrain, ' Elementwise B3 F1 =', F1B3, 'F0.5 =', F05B3, 'B3 recall =', recB3, 'B3 precision =', precB3)
 
 
         
@@ -246,7 +246,7 @@ class singleLabelClusterEvaluation:
 def loadData(pickled_dataset):
 
     if not os.path.exists(pickled_dataset):
-        print "Pickled dataset not found"
+        print("Pickled dataset not found")
         sys.exit()
 
     pklFile = open(pickled_dataset, 'rb')

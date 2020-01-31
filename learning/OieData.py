@@ -6,7 +6,8 @@ import numpy as np
 import scipy.sparse as sp
 import theano
 from definitions import settings
-import cPickle as pickle
+import _pickle as pickle
+from functools import reduce
 
 class MatrixDataSet:
     # matrix formatted dataset
@@ -72,7 +73,7 @@ class DataSetManager:
         # check numpy, it should have some efficient ways to sample from multinomials
         val = self.rng.uniform()
         pos = 0
-        for idx in xrange(len(distr)):
+        for idx in range(len(distr)):
             pos += distr[idx]
             if pos > val:
                 return idx
@@ -105,10 +106,10 @@ class DataSetManager:
 
             # should do it differently (sample random indexes during training), see below
 
-            for k in xrange(n):
+            for k in range(n):
                 neg1[k, i] = self._sample(self.negSamplingCum)
 
-            for k in xrange(n):
+            for k in range(n):
                 neg2[k, i] = self._sample(self.negSamplingCum)
             
 
@@ -149,10 +150,10 @@ class DataSetManager:
         self.id2Arg, self.arg2Id = self._indexElements(argFreqs)
 
 
-        argSampFreqs = [float(argFreqs[self.id2Arg[val]]) for val in xrange(len(self.id2Arg))]
-        argSampFreqsPowered = map(lambda x: m.pow(x, self.negSamplingDistrPower),  argSampFreqs)
-        norm1 = reduce(lambda x, y: x + y,  argSampFreqsPowered)
-        self.negSamplingDistr = map(lambda x: x / norm1, argSampFreqsPowered)
+        argSampFreqs = [float(argFreqs[self.id2Arg[val]]) for val in range(len(self.id2Arg))]
+        argSampFreqsPowered = list(map(lambda x: m.pow(x, self.negSamplingDistrPower), argSampFreqs))
+        norm1 = reduce(lambda x, y: x + y, argSampFreqsPowered)
+        self.negSamplingDistr = list(map(lambda x: x / norm1, argSampFreqsPowered))
         self.negSamplingCum = np.cumsum(self.negSamplingDistr)
 
 

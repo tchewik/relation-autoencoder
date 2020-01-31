@@ -6,8 +6,9 @@ import os
 import numpy as np
 
 import sys
+sys.path.append(".")
 import time
-import cPickle as pickle
+import _pickle as pickle
 import operator
 from theano import sparse
 import theano
@@ -97,7 +98,7 @@ class ReconstructInducer(object):
         neg1 = T.imatrix()  # n, l
         neg2 = T.imatrix()  # n, l
 
-        print "Starting to build train err computation (not compiling it yet)"
+        print("Starting to build train err computation (not compiling it yet)")
         adjust = float(batchSize) / float(trainDataNP.args1.shape[0])
 
         cost = self.modelFunc.buildTrainErrComputation(batchSize, self.data.getNegNum(),
@@ -123,8 +124,7 @@ class ReconstructInducer(object):
 
 
 
-        print "Compiling train function..."
-
+        print("Compiling train function...")
 
 
         trainModel = theano.function(inputs=[batchIdx, neg1, neg2],
@@ -135,7 +135,7 @@ class ReconstructInducer(object):
                 args1: trainData.args1[batchIdx * batchSize: (batchIdx + 1) * batchSize],
                 args2: trainData.args2[batchIdx * batchSize: (batchIdx + 1) * batchSize]
                                      }
-            )
+           )
         if False:
             trainEncoder = theano.function(inputs=[batchIdx, neg1, neg2],
                                      outputs=cost,
@@ -158,7 +158,7 @@ class ReconstructInducer(object):
 
         prediction = self.modelFunc.buildLabelComputation(batchSize, xFeats)
 
-        print "Compiling label function (for training)..."
+        print("Compiling label function (for training)...")
         labelTrain = theano.function(inputs=[batchIdx],
                                      outputs=prediction,
                                      updates=[],
@@ -166,14 +166,14 @@ class ReconstructInducer(object):
                 xFeats: trainData.xFeats[batchIdx * batchSize:(batchIdx + 1) * batchSize]})
 
         if validDataNP is not None:
-            print "Compiling label function (for validation)..."
+            print("Compiling label function (for validation)...")
             labelValid = theano.function(inputs=[batchIdx],
                                          outputs=prediction,
                                          updates=[],
                                          givens={xFeats: validData.xFeats[batchIdx * batchSize:
                                          (batchIdx + 1) * batchSize]})
         if testDataNP is not None:
-            print "Compiling label function (for test)..."
+            print("Compiling label function (for test)...")
             labelTest = theano.function(inputs=[batchIdx],
                                          outputs=prediction,
                                          updates=[],
@@ -181,7 +181,7 @@ class ReconstructInducer(object):
                                          (batchIdx + 1) * batchSize]})
 
 
-        print "Done with compiling function."
+        print("Done with compiling function.")
         if validDataNP is not None and testDataNP is not None:
 
             return trainModel, labelTest, labelValid
@@ -196,7 +196,7 @@ class ReconstructInducer(object):
         validDataNP = self.data.getValidSet()
         testDataNP = self.data.getTestSet()
 
-        print "Starting to compile functions"
+        print("Starting to compile functions")
 
 
         if validDataNP is not None and testDataNP is not None:
@@ -216,20 +216,20 @@ class ReconstructInducer(object):
         ###############
 
         # compute number of minibatches for training, validation and testing
-        trainBatchNum = trainDataNP.args1.shape[0] / self.batchSize
+        trainBatchNum = int(trainDataNP.args1.shape[0] / self.batchSize)
 
         if validDataNP is not None and testDataNP is not None:
-            validBatchNum = validDataNP.args1.shape[0] / self.batchSize
+            validBatchNum = int(validDataNP.args1.shape[0] / self.batchSize)
             validEval = singleLabelClusterEvaluation(self.goldStandard['dev'], False)
 
-            testBatchNum = testDataNP.args1.shape[0] / self.batchSize
+            testBatchNum = int(testDataNP.args1.shape[0] / self.batchSize)
             testEval = singleLabelClusterEvaluation(self.goldStandard['test'], False)
         else:
             trainEval = singleLabelClusterEvaluation(self.goldStandard['train'], False)
 
-        print str(trainBatchNum * self.batchSize) + " training examples, "
+        print(str(trainBatchNum * self.batchSize) + " training examples, ")
         # print trainDataNP.args1.shape[0], self.batchSize, trainBatchNum
-        print '... training the model'
+        print('... training the model')
         startTime = time.clock()
 
         doneLooping = False
@@ -246,8 +246,8 @@ class ReconstructInducer(object):
             epochStartTime = time.clock()
 
             epoch += 1
-            print '\nEPOCH ' + str(epoch)
-            for idx in xrange(trainBatchNum):
+            print('\nEPOCH ' + str(epoch))
+            for idx in range(trainBatchNum):
                 if not self.fixedSampling:
                     neg1 = negativeSamples1[:, idx * self.batchSize: (idx + 1) * self.batchSize]
                     neg2 = negativeSamples2[:, idx * self.batchSize: (idx + 1) * self.batchSize]
@@ -265,7 +265,7 @@ class ReconstructInducer(object):
                     if validDataNP is not None and testDataNP is not None:
                         if idx % 1 == 0:
                             print(str(idx * batchSize)),
-                            print idx, '############################################################'
+                            print(idx, '############################################################')
                             validCluster = self.getClustersSets(labelValid, validBatchNum)
                             validEval.createResponse(validCluster)
                             validEval.printEvaluation('Validation')
@@ -275,22 +275,22 @@ class ReconstructInducer(object):
                             testEval.printEvaluation('Test')
                     else:
                         print(str(idx * batchSize)),
-                        print idx, '############################################################'
+                        print(idx, '############################################################')
                         trainClusters = self.getClustersPopulation(labelTrain, trainBatchNum)
-                        print trainClusters
-                        print
+                        print(trainClusters)
+                        print()
 
 
             epochEndTime = time.clock()
 
-            print 'Training error ', str(err)
-            print "Epoch time = " + str(epochEndTime - epochStartTime)
+            print('Training error ', str(err))
+            print("Epoch time = " + str(epochEndTime - epochStartTime))
 
             if validDataNP is None or testDataNP is None:
-                print 'Training Set'
+                print('Training Set')
                 # print labelTrain(1)[1]
                 trainClusters = self.getClustersSets(labelTrain, trainBatchNum)
-                posteriorsTrain = [labelTrain(i)[1] for i in xrange(trainBatchNum)]
+                posteriorsTrain = [labelTrain(i)[1] for i in range(trainBatchNum)]
                 trainPosteriors = [item for sublist in posteriorsTrain for item in sublist]
                 # for p, probs in enumerate(predictions):
                 #     print p, probs
@@ -310,7 +310,7 @@ class ReconstructInducer(object):
             if validDataNP is not None and testDataNP is not None:
 
                 validCluster = self.getClustersSets(labelValid, validBatchNum)
-                posteriorsValid = [labelValid(i)[1] for i in xrange(validBatchNum)]
+                posteriorsValid = [labelValid(i)[1] for i in range(validBatchNum)]
                 validPosteriors = [item for sublist in posteriorsValid for item in sublist]
                 validEval.createResponse(validCluster)
                 validEval.printEvaluation('Validation')
@@ -321,7 +321,7 @@ class ReconstructInducer(object):
                         picklePosteriors(validPosteriors, self.modelID+'_Posteriors_epoch'+str(epoch)+'_valid')
 
                 testCluster = self.getClustersSets(labelTest, testBatchNum)
-                posteriorsTest = [labelTest(i)[1] for i in xrange(testBatchNum)]
+                posteriorsTest = [labelTest(i)[1] for i in range(testBatchNum)]
                 testPosteriors = [item for sublist in posteriorsTest for item in sublist]
                 testEval.createResponse(testCluster)
                 testEval.printEvaluation('Test')
@@ -333,48 +333,46 @@ class ReconstructInducer(object):
 
 
         endTime = time.clock()
-        print 'Optimization complete'
-        print 'The code run for %d epochs, with %f epochs/sec' % (epoch, 1. * epoch / (endTime - startTime))
-        print >> sys.stderr, ('The code for file ' + os.path.split(__file__)[1] +
+        print('Optimization complete')
+        print('The code run for %d epochs, with %f epochs/sec' % (epoch, 1. * epoch / (endTime - startTime)))
+        sys.stderr.write('The code for file ' + os.path.split(__file__)[1] +
                               ' ran for %.1fs' % ((endTime - startTime)))
-
-
 
 
     def getClustersSets(self, labelTrain, trainBatchNum):
         clusters = {}
-        for i in xrange(self.relationNum):
+        for i in range(self.relationNum):
             clusters[i] = set()
-        predictionsTrain = [labelTrain(i)[0] for i in xrange(trainBatchNum)]
+        predictionsTrain = [labelTrain(i)[0] for i in range(trainBatchNum)]
         predictions = [item for sublist in predictionsTrain for item in sublist]  # returns the flatten() list
-        for j in xrange(len(predictions)):
+        for j in range(len(predictions)):
             clusters[predictions[j]].add(j)
         return clusters
 
     def getClustersPopulation(self, labelTrain, trainBatchNum):
         clusters = {}
-        for i in xrange(self.relationNum):
+        for i in range(self.relationNum):
             clusters[i] = 0
-        predictionsTrain = [labelTrain(i)[0] for i in xrange(trainBatchNum)]
+        predictionsTrain = [labelTrain(i)[0] for i in range(trainBatchNum)]
         predictions = [item for sublist in predictionsTrain for item in sublist]  # returns the flatten() list
-        for j in xrange(len(predictions)):
+        for j in range(len(predictions)):
             clusters[predictions[j]] += 1
         return clusters
 
     def getClusters(self, labelTrain, trainBatchNum, train_dev):
         clusters = {}
-        for i in xrange(self.relationNum):
+        for i in range(self.relationNum):
             clusters[i] = []
-        predictionsTrain = [labelTrain(i)[0] for i in xrange(trainBatchNum)]
+        predictionsTrain = [labelTrain(i)[0] for i in range(trainBatchNum)]
         predictions = [item for sublist in predictionsTrain for item in sublist]  # returns the flatten() list
-        for j in xrange(len(predictions)):
+        for j in range(len(predictions)):
             clusters[predictions[j]].append(self.data.getExampleRelation(j, train_dev))
         return clusters
 
 
     def getClusteredFreq(self, clusters):
         clustFreq = {}
-        for i in xrange(self.relationNum):
+        for i in range(self.relationNum):
             clustFreq[i] = {}
         j = 0
         for c in clusters:
@@ -389,13 +387,13 @@ class ReconstructInducer(object):
 
     def printFirstK(self, k, clusterFreq):
         for c in clusterFreq:
-            print clusterFreq[c][:k]
+            print(clusterFreq[c][:k])
 
 
     def getClustersWithFrequencies(self, clusterSets, data, threshold):
         for c in clusterSets:
             frequency = {}
-            print c,
+            print(c, end='')
             for elem in clusterSets[c]:
                 trig = self.goldStandard['train'][elem][0]
                 if trig in frequency:
@@ -405,16 +403,16 @@ class ReconstructInducer(object):
             sorted_freq = sorted(frequency.items(), key=operator.itemgetter(1), reverse=True)
             if len(sorted_freq) < threshold:
                 for el in sorted_freq:
-                    print el,
+                    print(el, end='')
             else:
                 count = 0
                 for el in sorted_freq:
                     if count > threshold:
                         break
                     else:
-                        print el,
+                        print(el, end='')
                         count += 1
-            print ''
+            print()
 
 
 def saveModel(model, name):
@@ -429,11 +427,11 @@ def loadModel(name):
 def loadData(args, rng, negativeSamples, relationNum, modelType):
 
     if not os.path.exists(args.pickled_dataset):
-        print "Pickled dataset not found"
+        print("Pickled dataset not found")
         sys.exit()
 
     tStart = time.time()
-    print "Found existing pickled dataset, loading...",
+    print("Found existing pickled dataset, loading...", end='')
 
     pklFile = open(args.pickled_dataset, 'rb')
 
@@ -447,14 +445,13 @@ def loadData(args, rng, negativeSamples, relationNum, modelType):
 
     pklFile.close()
     tEnd = time.time()
-    print "Done (" + str(tEnd - tStart) + "s.)"
+    print("Done (" + str(tEnd - tStart) + "s.)")
 
     trigs = False
 
-
     indexedDataset = DataSetManager(data, relationLexicon, rng, negativeSamples, relationNum, trigs)
 
-    print "Produced indexed dataset"
+    print("Produced indexed dataset")
 
     return indexedDataset, goldStandard
 
@@ -471,25 +468,25 @@ def picklePosteriors(posteriors, posteriorsName):
 
 def getClustersWithInfo(clusterSets, data, threshold):
     for c in clusterSets:
-        print c,
+        print(c, end='')
         if len(clusterSets[c]) < threshold:
             for elem in clusterSets[c]:
-                print elem, data.getExampleFeatures(elem),
+                print(elem, data.getExampleFeatures(elem), end='')
         else:
             count = 0
             for elem in clusterSets[c]:
                 if count > threshold:
                     break
                 else:
-                    print elem, data.getExampleFeatures(elem),
+                    print(elem, data.getExampleFeatures(elem), end='')
                     count += 1
-        print ''
+        print()
 
 
 def getClustersWithFrequencies(clusterSets, data, threshold):
     for c in clusterSets:
         frequency = {}
-        print c,
+        print(c, end='')
         for elem in clusterSets[c]:
             trig = data.getExampleFeature(elem, 'trigger')
             if trig is not None:
@@ -501,22 +498,22 @@ def getClustersWithFrequencies(clusterSets, data, threshold):
         sorted_freq = sorted(frequency.items(), key=operator.itemgetter(1), reverse=True)
         if len(sorted_freq) < threshold:
             for el in sorted_freq:
-                print el,
+                print(el, end='')
         else:
             count = 0
             for el in sorted_freq:
                 if count > threshold:
                     break
                 else:
-                    print el,
+                    print(el, end='')
                     count += 1
-        print ''
+        print()
 
 
 def getClustersWithFrequenciesValid(clusterSets, data, threshold):
     for c in clusterSets:
         frequency = {}
-        print c,
+        print(c, end='')
         for elem in clusterSets[c]:
             trig = data.getExampleFeatureValid(elem, 'trigger')
             if trig is not None:
@@ -528,22 +525,22 @@ def getClustersWithFrequenciesValid(clusterSets, data, threshold):
         sorted_freq = sorted(frequency.items(), key=operator.itemgetter(1), reverse=True)
         if len(sorted_freq) < threshold:
             for el in sorted_freq:
-                print el,
+                print(el, end='')
         else:
             count = 0
             for el in sorted_freq:
                 if count > threshold:
                     break
                 else:
-                    print el,
+                    print(el, end='')
                     count += 1
-        print ''
+        print()
 
 
 def getClustersWithFrequenciesTest(clusterSets, data, threshold):
     for c in clusterSets:
         frequency = {}
-        print c,
+        print(c, end='')
         for elem in clusterSets[c]:
             trig = data.getExampleFeatureTest(elem, 'trigger')
             if trig is not None:
@@ -555,24 +552,24 @@ def getClustersWithFrequenciesTest(clusterSets, data, threshold):
         sorted_freq = sorted(frequency.items(), key=operator.itemgetter(1), reverse=True)
         if len(sorted_freq) < threshold:
             for el in sorted_freq:
-                print el,
+                print(el, end='')
         else:
             count = 0
             for el in sorted_freq:
                 if count > threshold:
                     break
                 else:
-                    print el,
+                    print(el, end='')
                     count += 1
-        print ''
+        print()
 
 def getClustersWithRelationLabels(clusterSets, data, evaluation, threshold):
     for c in clusterSets:
-        print c,
+        print(c, end='')
         if len(clusterSets[c]) < threshold:
             for elem in clusterSets[c]:
                 if evaluation.relations[elem][0] != '':
-                    print elem, data.getExampleFeatures(elem), evaluation.relations[elem],
+                    print(elem, data.getExampleFeatures(elem), evaluation.relations[elem], end='')
         else:
             count = 0
             for elem in clusterSets[c]:
@@ -580,9 +577,9 @@ def getClustersWithRelationLabels(clusterSets, data, evaluation, threshold):
                     break
                 else:
                     if evaluation.relations[elem][0] != '':
-                        print elem, data.getExampleFeatures(elem), evaluation.relations[elem],
+                        print(elem, data.getExampleFeatures(elem), evaluation.relations[elem], end='')
                         count += 1
-        print ''
+        print()
 
 
 def getCommandArgs():
@@ -650,10 +647,10 @@ def getCommandArgs():
 
 
 if __name__ == '__main__':
-    print "Relation Learner"
+    print("Relation Learner")
 
     args = getCommandArgs()
-    print args
+    print(args)
     rseed = args.seed
     rand = np.random.RandomState(seed=rseed)
 
@@ -661,7 +658,6 @@ if __name__ == '__main__':
     negativeSamples = args.negative_samples_number
     numberRelations = args.relations_number
     indexedData, goldStandard = loadData(args, rand, negativeSamples, numberRelations, args.model)
-
 
     maxEpochs = args.epochs
     learningRate = args.learning_rate

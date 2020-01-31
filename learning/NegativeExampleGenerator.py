@@ -14,15 +14,15 @@ class NegativeExampleGenerator(object):
 
     def _univariate_distr_sample(self, sampleSize=1):
         return [self._negSamplingCum.searchsorted(self._rand.uniform(0, self._negSamplingCum[-1]))
-                for i in xrange(0, sampleSize)]
+                for i in range(0, sampleSize)]
 
     def generate_random_negative_example(self, positiveArgs, negativeExampleNum):
         l = positiveArgs.shape[0]  # number of positive instances
         n = negativeExampleNum  # number of negative examples generated per instance
 
         negativeArgs = np.zeros((n, l), dtype=np.int32)
-        for instance_idx in xrange(l):
+        for instance_idx in range(l):
             samples = self._univariate_distr_sample(n)
-            for negNum_idx in xrange(n):
+            for negNum_idx in range(n):
                 negativeArgs[negNum_idx, instance_idx] = samples[negNum_idx]
         return negativeArgs

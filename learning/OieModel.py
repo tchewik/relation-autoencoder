@@ -4,6 +4,9 @@ __author__ = 'diego'
 import theano.tensor as T
 import theano
 from models.encoders.RelationClassifier import IndependentRelationClassifiers
+from models.decoders.Bilinear import Bilinear
+from models.decoders.SelectionalPreferences import SelectionalPreferences
+from models.decoders.BilinearPlusSP import BilinearPlusSP
 
 class OieModelFunctions(object):
 
@@ -20,16 +23,16 @@ class OieModelFunctions(object):
         self.relationClassifiers = IndependentRelationClassifiers(rng, featureDim, relationNum)
         self.params = self.relationClassifiers.params
         self.alpha = alpha
-        print 'Feature space size =', self.h
-        print 'Argument vocabulary size =', argVocSize
+        print('Feature space size =', self.h)
+        print('Argument vocabulary size =', argVocSize)
 
         self.L1 = T.sum(abs(self.relationClassifiers.W))
 
         self.L2 = T.sum(T.sqr(self.relationClassifiers.W))  # + T.sum(T.sqr(self.relationClassifiers.Wb))
 
         if self.model == 'A':
-            print 'Bilinear Model'
-            from models.decoders.Bilinear import Bilinear
+            print('Bilinear Model')
+            
 
             self.argProjector = Bilinear(rng, embedSize, relationNum, self.a, data, extEmb)
             self.params += self.argProjector.params
@@ -38,8 +41,8 @@ class OieModelFunctions(object):
                 self.L2 += T.sum(T.sqr(self.argProjector.C))
 
         elif self.model == 'AC':
-            print 'Bilinear + Selectional Preferences Model'
-            from models.decoders.BilinearPlusSP import BilinearPlusSP
+            print('Bilinear + Selectional Preferences Model')
+            
 
             self.argProjector = BilinearPlusSP(rng, embedSize, relationNum, self.a, data, extEmb)
             self.params += self.argProjector.params
@@ -49,8 +52,8 @@ class OieModelFunctions(object):
 
 
         elif self.model == 'C':
-            print 'Selectional Preferences'
-            from models.decoders.SelectionalPreferences import SelectionalPreferences
+            print('Selectional Preferences')
+            
 
             self.argProjector = SelectionalPreferences(rng, embedSize, relationNum, self.a, data, extEmb)
             self.params += self.argProjector.params
@@ -65,10 +68,10 @@ class OieModelFunctions(object):
         n = negNum
 
         # print xFeats
-        print "Relation classifiers..."
+        print("Relation classifiers...")
         # relationLabeler.output are probabilities of relations assignment arranged in a tensor [l, r]
         relationProbs = self.relationClassifiers.compRelationProbsFunc(xFeats=xFeats)
-        print "Arg projection..."
+        print("Arg projection...")
 
         entropy = self.alpha * -T.sum(T.log(relationProbs) * relationProbs, axis=1)  # [l,r] * [l,r] = [l]
 
@@ -85,7 +88,7 @@ class OieModelFunctions(object):
 
 
         resError = -T.mean(allScores)
-        print "Done with building the graph..."
+        print("Done with building the graph...")
         # resError = theano.printing.Print("resError ")(resError)
         return resError
 
